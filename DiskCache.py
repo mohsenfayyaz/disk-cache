@@ -26,7 +26,7 @@ class DiskCache(MutableMapping, ABC):
                 json.dump(value, f)
         else:
             with open(f"{file_path}.pickle", "wb") as f:
-                pickle.dump(value, f)
+                cPickle.dump(value, f)
         # else:
         #     with bz2.BZ2File(f"{file_path}.pbz2", 'w') as f:
         #         cPickle.dump(value, f)
@@ -38,7 +38,7 @@ class DiskCache(MutableMapping, ABC):
                 return json.load(f)
         else:
             with open(f"{file_path}.pickle", "rb") as f:
-                return pickle.load(f)
+                return cPickle.load(f)
         # else:
         #     data = bz2.BZ2File(f"{file_path}.pbz2", "rb")
         #     return cPickle.load(data)
