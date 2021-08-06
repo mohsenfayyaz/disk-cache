@@ -4,13 +4,16 @@ from pathlib import Path
 import json
 import os
 from shutil import rmtree
+import bz2
+import pickle
+import _pickle as cPickle
 
 
 class DiskCache(MutableMapping, ABC):
-    def __init__(self, folder_name):
+    def __init__(self, folder_name, save_as="pickle"):
         self.folder_name = folder_name
-        Path(folder_name).mkdir(parents=True, exist_ok=True)
-        self.keys = dict()
+        self.save_as = save_as
+        self.clear()
 
     def make_path(self, key):
         return self.folder_name + "/" + str(key)
@@ -18,13 +21,27 @@ class DiskCache(MutableMapping, ABC):
     def __setitem__(self, key, value):
         self.keys[key] = True
         file_path = self.make_path(key)
-        with open(f"{file_path}.json", "w") as json_file:
-            json.dump(value, json_file)
+        if self.save_as == "json":
+            with open(f"{file_path}.json", "w") as f:
+                json.dump(value, f)
+        else:
+            with open(f"{file_path}.pickle", "wb") as f:
+                pickle.dump(value, f)
+        # else:
+        #     with bz2.BZ2File(f"{file_path}.pbz2", 'w') as f:
+        #         cPickle.dump(value, f)
 
     def __getitem__(self, key):
         file_path = self.make_path(key)
-        with open(f"{file_path}.json", "r") as json_file:
-            return json.load(json_file)
+        if self.save_as == "json":
+            with open(f"{file_path}.json", "r") as f:
+                return json.load(f)
+        else:
+            with open(f"{file_path}.pickle", "rb") as f:
+                return pickle.load(f)
+        # else:
+        #     data = bz2.BZ2File(f"{file_path}.pbz2", "rb")
+        #     return cPickle.load(data)
 
     def __contains__(self, key):
         return self.keys.__contains__(key)
@@ -43,5 +60,6 @@ class DiskCache(MutableMapping, ABC):
 
     def clear(self):
         self.keys = dict()
-        rmtree(self.folder_name)
-        Path(self.folder_name).mkdir(parents=True, exist_ok=True)
+        if os.path.exists(self.folder_name):
+            rmtree(self.folder_name)
+        Path(self.folder_name).mkdir(parents=True)
