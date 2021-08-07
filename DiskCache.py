@@ -8,7 +8,6 @@ import pickle
 import _pickle as cPickle
 import gc
 import marshal
-import shelve
 import torch
 
 
@@ -17,7 +16,6 @@ class DiskCache(MutableMapping, ABC):
         self.folder_name = folder_name
         self.save_as = save_as
         self.clear()
-        self.shelve_cache = shelve.open("cache_tmp/shelve.shelve")
 
     def make_path(self, key):
         return self.folder_name + "/" + str(key)
@@ -35,15 +33,9 @@ class DiskCache(MutableMapping, ABC):
         elif self.save_as == "marshal":
             with open(f"{file_path}.marshal", "wb") as f:
                 marshal.dump(value, f)
-        elif self.save_as == "shelve":
-            self.shelve_cache[str(key)] = value
         elif self.save_as == "torch":
             torch.save(value, f"{file_path}.pt")
-
         gc.enable()
-        # else:
-        #     with bz2.BZ2File(f"{file_path}.pbz2", 'w') as f:
-        #         cPickle.dump(value, f)
 
     def __getitem__(self, key):
         gc.disable()
@@ -57,8 +49,6 @@ class DiskCache(MutableMapping, ABC):
         elif self.save_as == "marshal":
             with open(f"{file_path}.marshal", "rb") as f:
                 data = marshal.load(f)
-        elif self.save_as == "shelve":
-            data = self.shelve_cache[str(key)]
         elif self.save_as == "torch":
             data = torch.load(f"{file_path}.pt")
         gc.enable()
